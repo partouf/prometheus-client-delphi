@@ -9,15 +9,15 @@ uses
 
 type
   TPrometheusCounter = class(TInterfacedObject, IPrometheusCounter)
-  private
+  protected
     FLock: TCriticalSection;
     FLabelNames: TList<string>;
     FHelpText: string;
     FMetricName: string;
+    FMetricTypeName: string;
 
     FCounters: TDictionary<string, Double>;
 
-    function GetLabelsString(const Labels: TArray<string>): string;
     function ToMetricsString: string;
   public
     constructor Create(const MetricName: string; const HelpText: string; const LabelNames: TArray<string>);
@@ -41,6 +41,7 @@ constructor TPrometheusCounter.Create(const MetricName: string; const HelpText: 
 begin
   FMetricName := MetricName;
   FHelpText := HelpText;
+  FMetricTypeName := 'counter';
 
   FLabelNames := TList<string>.Create;
   FLabelNames.AddRange(LabelNames);
@@ -50,44 +51,12 @@ begin
   FLock := TCriticalSection.Create;
 end;
 
-function TPrometheusCounter.GetLabelsString(const Labels: TArray<string>): string;
-var
-  DicLabels: TDictionary<string, string>;
-  Key: string;
-  KeyVal: string;
-  EqualsSign: Integer;
-begin
-  if Length(Labels) = 0 then
-  begin
-    Result := 'default';
-    Exit;
-  end;
-
-  DicLabels := TDictionary<string, string>.Create;
-  try
-    for Key in FLabelNames do
-      DicLabels.Add(Key, '');
-
-    for KeyVal in Labels do
-    begin
-      EqualsSign := Pos('=', KeyVal);
-      Key := Copy(KeyVal, 1, EqualsSign - 1);
-      if DicLabels.ContainsKey(Key) then
-        DicLabels[Key] := Copy(KeyVal, EqualsSign + 1);
-    end;
-
-    Result := TPrometheusUtils.LabelsToString(DicLabels);
-  finally
-    DicLabels.Free;
-  end;
-end;
-
 procedure TPrometheusCounter.Inc(const Labels: TArray<string>; const Value: Double);
 var
   Key: string;
   CurrentValue: Double;
 begin
-  Key := GetLabelsString(Labels);
+  Key := TPrometheusUtils.GetLabelsString(FLabelNames, Labels);
 
   FLock.Acquire;
   try
@@ -127,7 +96,7 @@ end;
 function TPrometheusCounter.ToString: string;
 begin
   Result := Format('# HELP %s %s'#10, [FMetricName, FHelpText]);
-  Result := Result + Format('# TYPE %s %s'#10, [FMetricName, 'counter']);
+  Result := Result + Format('# TYPE %s %s'#10, [FMetricName, FMetricTypeName]);
   Result := Result + ToMetricsString;
 end;
 

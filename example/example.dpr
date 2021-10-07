@@ -13,10 +13,18 @@ uses
   Prometheus.Client in '..\Prometheus.Client.pas',
   Prometheus.Utils in '..\Prometheus.Utils.pas',
   Prometheus.Server in '..\Prometheus.Server.pas',
-  Prometheus.Counter in '..\Prometheus.Counter.pas';
+  Prometheus.Counter in '..\Prometheus.Counter.pas',
+  Prometheus.Gauge in '..\Prometheus.Gauge.pas';
 
 begin
   try
+
+    var ClientGauge := TPrometheusClient.NewGauge(
+      'cache_usage',
+      'Total bytes of cache used',
+      ['type', 'name']
+    );
+
     var ClientCounter := TPrometheusClient.NewCounter(
       'cache_put_total',
       'Total number of cache puts',
@@ -25,7 +33,9 @@ begin
 
     ClientCounter.Inc(['type=memory', 'name=default'], 2);
     ClientCounter.Inc(['type=disk', 'name=pizza'], 3);
+    ClientCounter.Inc(['type=disk', 'name=pizza'], 1);
 
+    ClientGauge.SetTo(['type=disk', 'name=pizza'], 7);
 
     TPrometheusServer.Create(12401);
 
@@ -33,6 +43,8 @@ begin
     begin
       Application.ProcessMessages;
       Sleep(100);
+
+      ClientGauge.SetTo(['type=disk', 'name=pizza'], Random(100));
     end;
   except
     on E: Exception do

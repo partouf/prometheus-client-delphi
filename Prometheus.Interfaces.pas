@@ -19,6 +19,16 @@ type
     procedure Inc(const Labels: TArray<string>; const Value: Double); overload;
   end;
 
+  IPrometheusGauge = interface(IPrometheusCounter)
+    ['{3761F3E6-E7C3-4186-9C07-F434C884305B}']
+
+    procedure SetTo(const Value: Double); overload;
+    procedure SetTo(const Labels: TArray<string>; const Value: Double); overload;
+
+    procedure Dec(const Value: Double); overload;
+    procedure Dec(const Labels: TArray<string>; const Value: Double); overload;
+  end;
+
 implementation
 
 end.

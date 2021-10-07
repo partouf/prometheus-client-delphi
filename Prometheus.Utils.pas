@@ -10,7 +10,7 @@ type
   public
     class function EscapeLabelValue(const Value: string): string;
     class function LabelsToString(const Labels: TDictionary<string, string>): string;
-
+    class function GetLabelsString(const DefaultLabels: TList<string>; const Labels: TArray<string>): string;
     class function CountMetricToString(const Value: Double): string;
   end;
 
@@ -53,6 +53,38 @@ begin
     end;
 
     Result := Result + '}';
+  end;
+end;
+
+class function TPrometheusUtils.GetLabelsString(const DefaultLabels: TList<string>; const Labels: TArray<string>): string;
+var
+  DicLabels: TDictionary<string, string>;
+  Key: string;
+  KeyVal: string;
+  EqualsSign: Integer;
+begin
+  if Length(Labels) = 0 then
+  begin
+    Result := 'default';
+    Exit;
+  end;
+
+  DicLabels := TDictionary<string, string>.Create;
+  try
+    for Key in DefaultLabels do
+      DicLabels.Add(Key, '');
+
+    for KeyVal in Labels do
+    begin
+      EqualsSign := Pos('=', KeyVal);
+      Key := Copy(KeyVal, 1, EqualsSign - 1);
+      if DicLabels.ContainsKey(Key) then
+        DicLabels[Key] := Copy(KeyVal, EqualsSign + 1);
+    end;
+
+    Result := TPrometheusUtils.LabelsToString(DicLabels);
+  finally
+    DicLabels.Free;
   end;
 end;
 
