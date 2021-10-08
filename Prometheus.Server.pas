@@ -15,6 +15,7 @@ type
     procedure OnCommandGet(AContext: TIdContext; ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
   public
     constructor Create(const Port: Integer);
+    destructor Destroy; override;
   end;
 
 implementation
@@ -34,6 +35,13 @@ begin
   FHttpServer.Active := True;
 end;
 
+destructor TPrometheusServer.Destroy;
+begin
+  FHttpServer.Active := False;
+
+  inherited;
+end;
+
 procedure TPrometheusServer.OnCommandGet(AContext: TIdContext;
   ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
 var
@@ -46,6 +54,7 @@ begin
 
     AResponseInfo.ResponseNo := 200;
     AResponseInfo.ContentType := 'text/plain; version=0.0.4';
+    AResponseInfo.ContentText := '';
 
     for Metric in Metrics do
     begin
